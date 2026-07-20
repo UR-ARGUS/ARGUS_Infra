@@ -55,6 +55,27 @@ output "backend_target_group_arn" {
   value       = aws_lb_target_group.backend.arn
 }
 
+# ── Frontend Compute ────────────────────────────────────────────────────────
+output "frontend_instance_id" {
+  description = "프론트엔드 EC2 인스턴스 ID (SSM/CI/CD 배포 대상)"
+  value       = aws_instance.frontend.id
+}
+
+output "frontend_private_ip" {
+  description = "프론트엔드 EC2 프라이빗 IP"
+  value       = aws_instance.frontend.private_ip
+}
+
+output "frontend_public_ip" {
+  description = "프론트엔드 EC2 퍼블릭 IP"
+  value       = aws_instance.frontend.public_ip
+}
+
+output "frontend_iam_role_name" {
+  description = "프론트엔드 EC2 SSM IAM Role 이름"
+  value       = aws_iam_role.frontend_ec2.name
+}
+
 # ── DNS / ACM ───────────────────────────────────────────────────────────────
 output "route53_zone_id" {
   description = "Route53 호스티드 존 ID (참조)"
