@@ -60,7 +60,7 @@ resource "aws_lb_target_group" "backend" {
     path                = var.backend_health_check_path
     port                = tostring(var.backend_port)
     protocol            = "HTTP"
-    matcher             = "200-399" 
+    matcher             = "200-399"
     interval            = 30
     timeout             = 5
     healthy_threshold   = 3

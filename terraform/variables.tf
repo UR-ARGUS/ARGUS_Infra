@@ -26,21 +26,22 @@ variable "environment" {
 # ── VPC / Subnet ────────────────────────────────────────────────────────────
 
 variable "vpc_cidr" {
-  description = "VPC CIDR 블록"
+  # Onde(10.0.0.0/16)와 대역을 분리 — 향후 VPC Peering/Transit Gateway 연결 대비
+  description = "VPC CIDR 블록 (Onde와 겹치지 않도록 10.1.0.0/16 사용)"
   type        = string
-  default     = "10.0.0.0/16"
+  default     = "10.1.0.0/16"
 }
 
 variable "public_subnet_cidrs" {
   description = "퍼블릭 서브넷 CIDR 목록 (ALB + 프론트엔드 EC2 배치)"
   type        = list(string)
-  default     = ["10.0.1.0/24", "10.0.2.0/24"]
+  default     = ["10.1.1.0/24", "10.1.2.0/24"]
 }
 
 variable "private_subnet_cidrs" {
   description = "프라이빗 서브넷 CIDR 목록 (백엔드 EC2 / docker-compose 배치)"
   type        = list(string)
-  default     = ["10.0.11.0/24", "10.0.12.0/24"]
+  default     = ["10.1.11.0/24", "10.1.12.0/24"]
 }
 
 variable "availability_zones" {
