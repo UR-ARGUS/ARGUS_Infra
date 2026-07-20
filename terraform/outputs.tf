@@ -57,13 +57,13 @@ output "backend_target_group_arn" {
 
 # ── DNS / ACM ───────────────────────────────────────────────────────────────
 output "route53_zone_id" {
-  description = "Route53 호스티드 존 ID"
-  value       = aws_route53_zone.main.zone_id
+  description = "Route53 호스티드 존 ID (참조)"
+  value       = data.aws_route53_zone.main.zone_id
 }
 
 output "route53_name_servers" {
-  description = "호스티드 존 네임서버 (도메인 등록기관에 NS로 등록 필요)"
-  value       = aws_route53_zone.main.name_servers
+  description = "호스티드 존 네임서버 (Route53 등록 도메인이라 자동 연결됨)"
+  value       = data.aws_route53_zone.main.name_servers
 }
 
 output "acm_certificate_arn" {

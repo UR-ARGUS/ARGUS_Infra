@@ -55,7 +55,7 @@ variable "availability_zones" {
 variable "domain_name" {
   description = "서비스 루트 도메인 (Route53 호스티드 존 + ACM 인증서 대상)"
   type        = string
-  default     = "argus.click"
+  default     = "rookies-argus.click"
 }
 
 # ── ALB / 타겟 그룹 ─────────────────────────────────────────────────────────
