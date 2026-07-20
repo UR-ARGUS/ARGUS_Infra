@@ -66,6 +66,23 @@ variable "frontend_port" {
   default     = 80
 }
 
+variable "frontend_instance_type" {
+  description = "프론트엔드 EC2 인스턴스 타입"
+  type        = string
+  default     = "t3.small"
+}
+
+variable "frontend_root_volume_size" {
+  description = "프론트엔드 EC2 루트 EBS 볼륨 크기(GB)"
+  type        = number
+  default     = 20
+
+  validation {
+    condition     = var.frontend_root_volume_size >= 8
+    error_message = "프론트엔드 루트 볼륨은 8GB 이상이어야 합니다."
+  }
+}
+
 variable "backend_port" {
   description = "백엔드 API(docker-compose) 리슨 포트"
   type        = number
