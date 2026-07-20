@@ -13,7 +13,7 @@
 
 ```mermaid
 flowchart TB
-    User([외부 사용자]) -->|"https://argus.click"| R53[Route53 · DNS]
+    User([외부 사용자]) -->|"https://rookies-argus.click"| R53[Route53 · DNS]
     R53 --> ALB
 
     subgraph VPC["Argus VPC (10.1.0.0/16)"]
@@ -34,7 +34,7 @@ flowchart TB
 
 **트래픽 흐름**
 
-1. 사용자가 `https://argus.click` 접속 → **Route53**이 **ALB**로 안내
+1. 사용자가 `https://rookies-argus.click` 접속 → **Route53**이 **ALB**로 안내
 2. **ALB**가 443(HTTPS)을 **ACM 인증서**로 처리 (80 → 443 자동 리다이렉트)
 3. 경로 분기: 기본(`/`) → **Frontend(Nginx)**, `/api/*` → **Backend(:8001)**
 4. 백엔드 아웃바운드는 **NAT → IGW**로만 (외부에서 백엔드 직접 진입 불가)
@@ -123,7 +123,7 @@ terraform apply     # 실제 인프라 생성
 | `public_subnet_cidrs` | `10.1.1.0/24`, `10.1.2.0/24` | 퍼블릭 서브넷 |
 | `private_subnet_cidrs` | `10.1.11.0/24`, `10.1.12.0/24` | 프라이빗 서브넷 |
 | `availability_zones` | `ap-northeast-2a`, `2c` | 가용영역 |
-| `domain_name` | `argus.click` | 서비스 도메인 |
+| `domain_name` | `rookies-argus.click` | 서비스 도메인 |
 | `backend_port` | `8001` | 백엔드 API 포트 |
 
 ### 주요 출력값 (`outputs.tf`)
