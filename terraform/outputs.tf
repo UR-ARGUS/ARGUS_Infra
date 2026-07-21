@@ -96,3 +96,59 @@ output "service_url" {
   description = "서비스 접속 URL"
   value       = "https://${var.domain_name}"
 }
+
+# ── Storage & Secrets ───────────────────────────────────────────────────────
+output "tfstate_bucket_name" {
+  description = "Terraform 원격 상태 저장용 S3 버킷 이름 (provider.tf backend 블록에 사용)"
+  value       = aws_s3_bucket.tfstate.bucket
+}
+
+output "tfstate_lock_table_name" {
+  description = "Terraform 상태 락용 DynamoDB 테이블 이름"
+  value       = aws_dynamodb_table.tfstate_lock.name
+}
+
+output "reports_bucket_name" {
+  description = "ZAP·Selenium 리포트 저장용 S3 버킷 이름"
+  value       = aws_s3_bucket.reports.bucket
+}
+
+output "reports_bucket_arn" {
+  description = "리포트 S3 버킷 ARN"
+  value       = aws_s3_bucket.reports.arn
+}
+
+output "reports_s3_access_policy_arn" {
+  description = "리포트 버킷 읽기/쓰기 IAM 정책 ARN (백엔드·CD Role에 attach)"
+  value       = aws_iam_policy.reports_s3_access.arn
+}
+
+output "backend_data_volume_id" {
+  description = "백엔드 데이터 EBS 볼륨 ID (백엔드 컴퓨트 파트에서 aws_volume_attachment로 연결)"
+  value       = aws_ebs_volume.backend_data.id
+}
+
+output "app_secret_arn" {
+  description = "백엔드 애플리케이션 시크릿(Secrets Manager) ARN"
+  value       = aws_secretsmanager_secret.app.arn
+}
+
+output "app_secret_read_policy_arn" {
+  description = "애플리케이션 시크릿 읽기 IAM 정책 ARN (백엔드 EC2 Role에 attach)"
+  value       = aws_iam_policy.app_secret_read.arn
+}
+
+output "github_actions_role_arn" {
+  description = "GitHub Actions가 OIDC로 assume 할 IAM Role ARN (워크플로우의 role-to-assume 값)"
+  value       = aws_iam_role.github_actions.arn
+}
+
+output "github_oidc_provider_arn" {
+  description = "GitHub Actions OIDC Provider ARN"
+  value       = aws_iam_openid_connect_provider.github_actions.arn
+}
+
+output "backup_vault_name" {
+  description = "AWS Backup Vault 이름"
+  value       = aws_backup_vault.main.name
+}
