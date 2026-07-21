@@ -100,3 +100,82 @@ variable "backend_health_check_path" {
   type        = string
   default     = "/health"
 }
+
+# ── Storage & Secrets ───────────────────────────────────────────────────────
+
+variable "backend_data_volume_size" {
+  description = "백엔드 EC2에 붙일 추가 데이터 EBS 볼륨 크기(GB) — 리포트/redis/docker volume 용도"
+  type        = number
+  default     = 20
+}
+
+variable "reports_expiration_days" {
+  description = "리포트 S3 버킷 객체 만료(삭제)까지 걸리는 일수"
+  type        = number
+  default     = 180
+}
+
+variable "reports_ia_transition_days" {
+  description = "리포트 S3 버킷 객체를 STANDARD_IA로 전환하는 일수"
+  type        = number
+  default     = 30
+}
+
+variable "tfstate_lock_table_name" {
+  description = "Terraform 상태 락용 DynamoDB 테이블 이름"
+  type        = string
+  default     = "argus-tfstate-lock"
+}
+
+variable "app_secret_name" {
+  description = "백엔드 애플리케이션 시크릿의 Secrets Manager 이름 (DB/JWT/외부 API 키 등, 실제 값은 콘솔·CLI로 채움)"
+  type        = string
+  default     = "argus/app"
+}
+
+# 아래 3개는 기본값을 두지 않는다 — gitignore된 *.tfvars 파일(예: secrets.auto.tfvars)로만
+# 주입해야 하며, 실수로 코드에 실제 값을 박아넣지 못하게 강제한다. (example.tfvars 참고)
+variable "db_password" {
+  description = "백엔드 DB 비밀번호 (secrets.auto.tfvars 등 gitignore된 파일로 주입)"
+  type        = string
+  sensitive   = true
+}
+
+variable "jwt_secret" {
+  description = "백엔드 JWT 서명 시크릿 (secrets.auto.tfvars 등 gitignore된 파일로 주입)"
+  type        = string
+  sensitive   = true
+}
+
+variable "redis_password" {
+  description = "Redis 비밀번호 (secrets.auto.tfvars 등 gitignore된 파일로 주입)"
+  type        = string
+  sensitive   = true
+}
+
+variable "github_org" {
+  description = "GitHub 조직/계정 이름 (OIDC 신뢰 정책 대상)"
+  type        = string
+  default     = "UR-ARGUS"
+}
+
+variable "github_allowed_repos" {
+  # CI(홍지호)·CD(김현석) 파트에서 실제 앱 리포지토리 이름이 정해지면 목록에 추가할 것.
+  description = "GitHub Actions OIDC 역할을 assume 할 수 있는 \"org/repo\" 목록"
+  type        = list(string)
+  default = [
+    "UR-ARGUS/ARGUS_Infra",
+  ]
+}
+
+variable "backup_schedule_cron" {
+  description = "AWS Backup 실행 스케줄 (cron, UTC 기준)"
+  type        = string
+  default     = "cron(0 18 * * ? *)" # 매일 03:00 KST (UTC 18:00)
+}
+
+variable "backup_retention_days" {
+  description = "AWS Backup 스냅샷 보관 일수"
+  type        = number
+  default     = 14
+}
