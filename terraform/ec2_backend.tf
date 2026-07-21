@@ -95,6 +95,9 @@ resource "aws_instance" "backend" {
     echo '${base64encode(replace(file("${path.module}/../scripts/inject-secrets.sh"), "\r\n", "\n"))}' | base64 -d > /opt/argus/scripts/inject-secrets.sh
     chmod +x /opt/argus/scripts/inject-secrets.sh
 
+    systemctl enable amazon-ssm-agent
+    systemctl restart amazon-ssm-agent
+
     # ── 데이터용 EBS 볼륨(20G) 포맷 + 마운트 ──────────────────────────────
     # aws_volume_attachment는 인스턴스 생성 후 별도로 attach되는 리소스라
     # user_data 실행 시점엔 디바이스가 아직 안 붙어있을 수 있다 — 나타날 때까지 대기.
@@ -120,9 +123,6 @@ resource "aws_instance" "backend" {
 
     UUID=$(blkid -s UUID -o value "$DEVICE")
     grep -q "$MOUNT_POINT" /etc/fstab || echo "UUID=$UUID $MOUNT_POINT ext4 defaults,nofail 0 2" >> /etc/fstab
-
-    systemctl enable amazon-ssm-agent
-    systemctl restart amazon-ssm-agent
   EOF
 
   root_block_device {
