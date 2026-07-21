@@ -182,6 +182,7 @@ variable "github_allowed_repos" {
   type        = list(string)
   default = [
     "UR-ARGUS/ARGUS_Infra",
+    "UR-ARGUS/ARGUS_Merge",
   ]
 }
 
