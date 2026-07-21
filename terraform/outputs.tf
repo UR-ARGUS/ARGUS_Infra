@@ -96,3 +96,14 @@ output "service_url" {
   description = "서비스 접속 URL"
   value       = "https://${var.domain_name}"
 }
+
+# ── ECR Repositories ────────────────────────────────────────────────────────
+output "ecr_repository_frontend_url" {
+  description = "프론트엔드 ECR 리포지토리 URL"
+  value       = aws_ecr_repository.frontend.repository_url
+}
+
+output "ecr_repository_backend_url" {
+  description = "백엔드 ECR 리포지토리 URL"
+  value       = aws_ecr_repository.backend.repository_url
+}
