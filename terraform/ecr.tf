@@ -102,3 +102,45 @@ resource "aws_ecr_lifecycle_policy" "backend_policy" {
     ]
   })
 }
+
+# ── ECR Pull 권한 (배포 대상 EC2가 이미지를 받아가기 위함) ──────────────────
+# push는 github_oidc.tf의 github_actions role만 담당하고, 이 정책은 pull 전용.
+# docker-compose.prod.yml이 두 EC2에서 ECR 이미지를 pull하려면 필요.
+resource "aws_iam_policy" "ecr_pull" {
+  name = "${var.project_name}-ecr-pull"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid      = "EcrAuth"
+        Effect   = "Allow"
+        Action   = ["ecr:GetAuthorizationToken"]
+        Resource = "*"
+      },
+      {
+        Sid    = "EcrPull"
+        Effect = "Allow"
+        Action = [
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+        ]
+        Resource = [
+          aws_ecr_repository.frontend.arn,
+          aws_ecr_repository.backend.arn,
+        ]
+      },
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "frontend_ecr_pull" {
+  role       = aws_iam_role.frontend_ec2.name
+  policy_arn = aws_iam_policy.ecr_pull.arn
+}
+
+resource "aws_iam_role_policy_attachment" "backend_ecr_pull" {
+  role       = aws_iam_role.backend_ec2.name
+  policy_arn = aws_iam_policy.ecr_pull.arn
+}
