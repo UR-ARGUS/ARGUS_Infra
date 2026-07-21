@@ -114,6 +114,13 @@ resource "aws_instance" "backend" {
 
   depends_on = [aws_iam_role_policy_attachment.backend_ssm]
 
+  # AMI는 최초 생성 시점 값으로 고정한다 (frontend와 동일한 이유 — ec2_frontend.tf 참고).
+  # 고정하지 않으면 AWS가 AL2023 패치 AMI를 새로 릴리스할 때마다 컨테이너가 떠있는
+  # 백엔드 인스턴스가 통째로 재생성된다.
+  lifecycle {
+    ignore_changes = [ami]
+  }
+
   tags = {
     Name = "${var.project_name}-backend"
     Role = "backend"
