@@ -3,6 +3,9 @@ name: App Build & Push to ECR
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - 'frontend/**'
+      - 'backend/**'
 
 permissions:
   id-token: write
@@ -17,7 +20,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: YOUR_OIDC_ROLE_ARN_HERE
+          role-to-assume: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE_ARN }}
           aws-region: ap-northeast-2
 
       - name: Login to Amazon ECR
@@ -30,8 +33,9 @@ jobs:
           ECR_REPOSITORY: argus-dev-frontend
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          echo "docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest ."
-          echo "docker push -a $ECR_REGISTRY/$ECR_REPOSITORY"
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest ./frontend
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
   build-and-push-backend:
     runs-on: ubuntu-latest
@@ -41,7 +45,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: YOUR_OIDC_ROLE_ARN_HERE
+          role-to-assume: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE_ARN }}
           aws-region: ap-northeast-2
 
       - name: Login to Amazon ECR
@@ -54,5 +58,6 @@ jobs:
           ECR_REPOSITORY: argus-dev-backend
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          echo "docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest ."
-          echo "docker push -a $ECR_REGISTRY/$ECR_REPOSITORY"
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest ./backend
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest

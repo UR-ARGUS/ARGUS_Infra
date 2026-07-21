@@ -160,11 +160,11 @@ variable "github_org" {
 }
 
 variable "github_allowed_repos" {
-  # CI(홍지호)·CD(김현석) 파트에서 실제 앱 리포지토리 이름이 정해지면 목록에 추가할 것.
   description = "GitHub Actions OIDC 역할을 assume 할 수 있는 \"org/repo\" 목록"
   type        = list(string)
   default = [
     "UR-ARGUS/ARGUS_Infra",
+    "UR-ARGUS/ARGUS_Merge", # 앱(frontend/backend) CI: lint/test, ECR build&push
   ]
 }
 
