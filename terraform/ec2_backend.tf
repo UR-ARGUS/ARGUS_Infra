@@ -95,6 +95,32 @@ resource "aws_instance" "backend" {
     echo '${base64encode(replace(file("${path.module}/../scripts/inject-secrets.sh"), "\r\n", "\n"))}' | base64 -d > /opt/argus/scripts/inject-secrets.sh
     chmod +x /opt/argus/scripts/inject-secrets.sh
 
+    # ── 데이터용 EBS 볼륨(20G) 포맷 + 마운트 ──────────────────────────────
+    # aws_volume_attachment는 인스턴스 생성 후 별도로 attach되는 리소스라
+    # user_data 실행 시점엔 디바이스가 아직 안 붙어있을 수 있다 — 나타날 때까지 대기.
+    DEVICE=/dev/nvme1n1
+    MOUNT_POINT=/opt/argus/data
+
+    for i in $(seq 1 30); do
+      [ -b "$DEVICE" ] && break
+      sleep 5
+    done
+
+    if [ ! -b "$DEVICE" ]; then
+      echo "ERROR: $DEVICE did not appear after waiting" >&2
+      exit 1
+    fi
+
+    if ! blkid "$DEVICE"; then
+      mkfs -t ext4 "$DEVICE"
+    fi
+
+    mkdir -p "$MOUNT_POINT"
+    mount "$DEVICE" "$MOUNT_POINT"
+
+    UUID=$(blkid -s UUID -o value "$DEVICE")
+    grep -q "$MOUNT_POINT" /etc/fstab || echo "UUID=$UUID $MOUNT_POINT ext4 defaults,nofail 0 2" >> /etc/fstab
+
     systemctl enable amazon-ssm-agent
     systemctl restart amazon-ssm-agent
   EOF
