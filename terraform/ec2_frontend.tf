@@ -108,6 +108,13 @@ resource "aws_instance" "frontend" {
 
   depends_on = [aws_iam_role_policy_attachment.frontend_ssm]
 
+  # AMI는 최초 생성 시점 값으로 고정한다.
+  # data.aws_ami가 most_recent = true라서, 고정하지 않으면 AWS가 AL2023 패치 AMI를
+  # 새로 릴리스할 때마다 plan에서 인스턴스가 매번 재생성(다운타임)된다.
+  lifecycle {
+    ignore_changes = [ami]
+  }
+
   tags = {
     Name = "${var.project_name}-frontend"
     Role = "frontend"

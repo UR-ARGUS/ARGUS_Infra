@@ -89,6 +89,23 @@ variable "backend_port" {
   default     = 8001
 }
 
+variable "backend_instance_type" {
+  description = "백엔드 EC2 인스턴스 타입 (zap+backend+worker+selenium 4개 컨테이너 동시 구동 기준 추정치 — selenium은 브라우저 구동으로 메모리 소모가 커서 t3.large 이상 권장. 실측 검증 전까지는 잠정값)"
+  type        = string
+  default     = "t3.large"
+}
+
+variable "backend_root_volume_size" {
+  description = "백엔드 EC2 루트 EBS 볼륨 크기(GB) — zap/backend/worker/selenium 이미지 저장 공간 포함 (selenium 이미지가 커서 여유있게 산정)"
+  type        = number
+  default     = 40
+
+  validation {
+    condition     = var.backend_root_volume_size >= 8
+    error_message = "백엔드 루트 볼륨은 8GB 이상이어야 합니다."
+  }
+}
+
 variable "frontend_health_check_path" {
   description = "프론트엔드 타겟 그룹 헬스체크 경로"
   type        = string
@@ -96,9 +113,9 @@ variable "frontend_health_check_path" {
 }
 
 variable "backend_health_check_path" {
-  description = "백엔드 타겟 그룹 헬스체크 경로 (백엔드 팀이 실제 헬스 엔드포인트에 맞게 조정)"
+  description = "백엔드 타겟 그룹 헬스체크 경로 (ARGUS_Merge backend/app/main.py의 @app.get(\"/api/health\") 기준)"
   type        = string
-  default     = "/health"
+  default     = "/api/health"
 }
 
 # ── Storage & Secrets ───────────────────────────────────────────────────────

@@ -76,6 +76,22 @@ output "frontend_iam_role_name" {
   value       = aws_iam_role.frontend_ec2.name
 }
 
+# ── Backend Compute ─────────────────────────────────────────────────────────
+output "backend_instance_id" {
+  description = "백엔드 EC2 인스턴스 ID (SSM/CI/CD 배포 대상)"
+  value       = aws_instance.backend.id
+}
+
+output "backend_private_ip" {
+  description = "백엔드 EC2 프라이빗 IP"
+  value       = aws_instance.backend.private_ip
+}
+
+output "backend_iam_role_name" {
+  description = "백엔드 EC2 IAM Role 이름 (SSM + Storage&Secrets가 요청한 app_secret_read/reports_s3_access 정책)"
+  value       = aws_iam_role.backend_ec2.name
+}
+
 # ── DNS / ACM ───────────────────────────────────────────────────────────────
 output "route53_zone_id" {
   description = "Route53 호스티드 존 ID (참조)"
