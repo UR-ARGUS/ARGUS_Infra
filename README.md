@@ -13,7 +13,7 @@
 
 ```mermaid
 flowchart TB
-    User([외부 사용자]) -->|"https://argus.click"| R53[Route53 · DNS]
+    User([외부 사용자]) -->|"https://rookies-rookies-argus.click"| R53[Route53 · DNS]
     R53 --> ALB
 
     subgraph VPC["Argus VPC (10.1.0.0/16)"]
@@ -34,7 +34,7 @@ flowchart TB
 
 **트래픽 흐름**
 
-1. 사용자가 `https://argus.click` 접속 → **Route53**이 **ALB**로 안내
+1. 사용자가 `https://rookies-rookies-argus.click` 접속 → **Route53**이 **ALB**로 안내
 2. **ALB**가 443(HTTPS)을 **ACM 인증서**로 처리 (80 → 443 자동 리다이렉트)
 3. 경로 분기: 기본(`/`) → **Frontend(Nginx)**, `/api/*` → **Backend(:8001)**
 4. 백엔드 아웃바운드는 **NAT → IGW**로만 (외부에서 백엔드 직접 진입 불가)
@@ -47,8 +47,9 @@ flowchart TB
 .
 ├── README.md
 ├── scripts/
-│   ├── inject-secrets.sh  # Secrets Manager → .env 주입 (backend EC2 / SSM)
-│   └── cd/                # CD: SSM 배포·HTTP 스모크 검증 스크립트
+│   └── inject-secrets.sh  # Secrets Manager → .env 주입 (backend EC2 / SSM)
+├── .github/workflows/
+│   └── deploy.yml         # CD: SSM 배포 (Onde 스타일, YAML 인라인)
 └── terraform/
     ├── provider.tf     # Terraform·AWS 프로바이더 & 원격 상태 저장소 설정
     ├── variables.tf    # 입력 변수(리전·CIDR·도메인·포트 등)
@@ -141,7 +142,7 @@ terraform apply     # 실제 인프라 생성
 | `public_subnet_cidrs` | `10.1.1.0/24`, `10.1.2.0/24` | 퍼블릭 서브넷 |
 | `private_subnet_cidrs` | `10.1.11.0/24`, `10.1.12.0/24` | 프라이빗 서브넷 |
 | `availability_zones` | `ap-northeast-2a`, `2c` | 가용영역 |
-| `domain_name` | `argus.click` | 서비스 도메인 |
+| `domain_name` | `rookies-argus.click` | 서비스 도메인 |
 | `backend_port` | `8001` | 백엔드 API 포트 |
 
 ### 주요 출력값 (`outputs.tf`)
@@ -160,13 +161,23 @@ terraform apply     # 실제 인프라 생성
 
 ## CD & 배포 테스트 (GitHub Actions + SSM)
 
-CloudWatch / Synthetics는 **사용하지 않습니다**. 배포 검증은 ALB TargetHealth + HTTPS 스모크(` / `, `/api/health`)로 합니다.
+CloudWatch / Synthetics는 **사용하지 않습니다**. Onde_Infra와 같이 **배포 명령은 `deploy.yml`에 인라인**합니다 (별도 `.sh` CD 스크립트 없음).
 
-- 워크플로: [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) (`workflow_dispatch`)
-- 스크립트: [`scripts/cd/`](scripts/cd/) — 상세는 [`scripts/cd/README.md`](scripts/cd/README.md)
-- OIDC 역할: `github_oidc.tf` (SSM SendCommand + 인스턴스/TG 조회). **terraform apply는 통합 담당**이 실행합니다.
-- 필요 Secret: `AWS_GITHUB_ACTIONS_ROLE_ARN`
-- 필요 Variables: `FRONTEND_INSTANCE_ID`, `BACKEND_INSTANCE_ID`, `ECR_REGISTRY`, `SERVICE_URL` (+ 선택 TG ARN, `ENVIRONMENT`)
+- 워크플로: [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)
+  - `repository_dispatch`: `deploy-frontend` / `deploy-backend` / `deploy-all` (앱 CI가 ECR push 후 호출)
+  - `workflow_dispatch`: 수동 배포
+- OIDC: `github_oidc.tf` (SSM 등). **terraform apply는 통합 담당**
+- Secret: `AWS_GITHUB_ACTIONS_ROLE_ARN`
+- Variables: `FRONTEND_INSTANCE_ID`, `BACKEND_INSTANCE_ID`, `ECR_REGISTRY`, `SERVICE_URL` (`https://rookies-argus.click`), 선택 `ENVIRONMENT`
+
+앱 레포(CI)에서 인프라로 신호 예시:
+
+```bash
+gh api repos/UR-ARGUS/ARGUS_Infra/dispatches \
+  -f event_type=deploy-all \
+  -f client_payload='{"image_tag":"'"$GITHUB_SHA"'"}'
+```
+
 
 ## ⚠️ 배포 시 주의사항
 
