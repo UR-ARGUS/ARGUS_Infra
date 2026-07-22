@@ -1,0 +1,103 @@
+name: Deploy
+
+# CD: SSM deploy + HTTP smoke (no CloudWatch / no terraform apply).
+# Requires GitHub Actions Variables + secret AWS_GITHUB_ACTIONS_ROLE_ARN
+# after infra apply by the integration owner.
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: ECR image tag to deploy
+        required: true
+        default: latest
+        type: string
+      run_zap:
+        description: Run optional ZAP container health check after deploy
+        required: false
+        default: false
+        type: boolean
+      zap_strict:
+        description: Fail the job if ZAP check fails
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-northeast-2
+
+jobs:
+  deploy:
+    name: Deploy and verify
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate required configuration
+        env:
+          ROLE_ARN: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+          FRONTEND_INSTANCE_ID: ${{ vars.FRONTEND_INSTANCE_ID }}
+          BACKEND_INSTANCE_ID: ${{ vars.BACKEND_INSTANCE_ID }}
+          ECR_REGISTRY: ${{ vars.ECR_REGISTRY }}
+          SERVICE_URL: ${{ vars.SERVICE_URL }}
+        run: |
+          set -euo pipefail
+          missing=0
+          for name in ROLE_ARN FRONTEND_INSTANCE_ID BACKEND_INSTANCE_ID ECR_REGISTRY SERVICE_URL; do
+            if [ -z "${!name:-}" ]; then
+              echo "::error::Missing required secret/variable: $name"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            echo "Set repo Secrets/Variables (see scripts/cd/README.md)."
+            exit 1
+          fi
+
+      - name: Resolve defaults
+        env:
+          ENVIRONMENT: ${{ vars.ENVIRONMENT }}
+        run: |
+          echo "ENVIRONMENT=${ENVIRONMENT:-dev}" >> "$GITHUB_ENV"
+          echo "PROJECT_NAME=argus" >> "$GITHUB_ENV"
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy backend
+        env:
+          BACKEND_INSTANCE_ID: ${{ vars.BACKEND_INSTANCE_ID }}
+          BACKEND_TARGET_GROUP_ARN: ${{ vars.BACKEND_TARGET_GROUP_ARN }}
+          ECR_REGISTRY: ${{ vars.ECR_REGISTRY }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          chmod +x scripts/cd/*.sh
+          ./scripts/cd/deploy-backend.sh
+
+      - name: Deploy frontend
+        env:
+          FRONTEND_INSTANCE_ID: ${{ vars.FRONTEND_INSTANCE_ID }}
+          FRONTEND_TARGET_GROUP_ARN: ${{ vars.FRONTEND_TARGET_GROUP_ARN }}
+          ECR_REGISTRY: ${{ vars.ECR_REGISTRY }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        run: ./scripts/cd/deploy-frontend.sh
+
+      - name: Smoke test (FE / and BE /api/health)
+        env:
+          SERVICE_URL: ${{ vars.SERVICE_URL }}
+        run: ./scripts/cd/verify-smoke.sh
+
+      - name: Optional ZAP verify
+        if: ${{ inputs.run_zap }}
+        env:
+          BACKEND_INSTANCE_ID: ${{ vars.BACKEND_INSTANCE_ID }}
+          ZAP_VERIFY_STRICT: ${{ inputs.zap_strict && '1' || '0' }}
+        run: ./scripts/cd/verify-zap.sh

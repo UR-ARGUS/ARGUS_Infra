@@ -3,7 +3,7 @@
 # GitHub Actions ↔ AWS OIDC 연동 (장기 액세스 키 없이 CI/CD가 AWS 자격 증명을 획득)
 #
 # 대상: CI(홍지호) - 이미지 빌드/ECR push, terraform plan
-#       CD(김현석) - SSM 배포, CloudWatch 검증
+#       CD(김현석) - SSM 배포, HTTP/ALB 헬스 검증
 # 흐용: GitHub Actions → OIDC 토큰 발급 → sts:AssumeRoleWithWebIdentity
 #      → var.github_allowed_repos 에 등록된 리포지토리만 Role 획득 가능
 # ────────────────────────────────────────────────────────────────────────────
@@ -119,7 +119,8 @@ resource "aws_iam_role_policy" "github_actions_tfstate" {
   })
 }
 
-# ── SSM 배포 (CD: RunCommand로 EC2에 배포) ──────────────────────────────────
+# ── SSM 배포 + 배포 검증 (CD: RunCommand / 인스턴스·TG 헬스) ────────────────
+# CloudWatch/Synthetics 미사용 — HTTP smoke + DescribeTargetHealth 로 검증.
 resource "aws_iam_role_policy" "github_actions_ssm_deploy" {
   name = "${var.project_name}-github-actions-ssm-deploy"
   role = aws_iam_role.github_actions.id
@@ -134,6 +135,24 @@ resource "aws_iam_role_policy" "github_actions_ssm_deploy" {
           "ssm:SendCommand",
           "ssm:GetCommandInvocation",
           "ssm:ListCommandInvocations",
+          "ssm:DescribeInstanceInformation",
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "Ec2DescribeForCd"
+        Effect = "Allow"
+        Action = [
+          "ec2:DescribeInstances",
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "AlbTargetHealthForCd"
+        Effect = "Allow"
+        Action = [
+          "elasticloadbalancing:DescribeTargetHealth",
+          "elasticloadbalancing:DescribeTargetGroups",
         ]
         Resource = "*"
       },
