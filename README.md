@@ -47,7 +47,8 @@ flowchart TB
 .
 ├── README.md
 ├── scripts/
-│   └── inject-secrets.sh  # Secrets Manager → .env 주입 스크립트 (backend EC2에서 SSM으로 실행)
+│   ├── inject-secrets.sh  # Secrets Manager → .env 주입 (backend EC2 / SSM)
+│   └── cd/                # CD: SSM 배포·HTTP 스모크 검증 스크립트
 └── terraform/
     ├── provider.tf     # Terraform·AWS 프로바이더 & 원격 상태 저장소 설정
     ├── variables.tf    # 입력 변수(리전·CIDR·도메인·포트 등)
@@ -152,6 +153,20 @@ terraform apply     # 실제 인프라 생성
 `backup_vault_name`
 
 ---
+
+
+
+---
+
+## CD & 배포 테스트 (GitHub Actions + SSM)
+
+CloudWatch / Synthetics는 **사용하지 않습니다**. 배포 검증은 ALB TargetHealth + HTTPS 스모크(` / `, `/api/health`)로 합니다.
+
+- 워크플로: [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) (`workflow_dispatch`)
+- 스크립트: [`scripts/cd/`](scripts/cd/) — 상세는 [`scripts/cd/README.md`](scripts/cd/README.md)
+- OIDC 역할: `github_oidc.tf` (SSM SendCommand + 인스턴스/TG 조회). **terraform apply는 통합 담당**이 실행합니다.
+- 필요 Secret: `AWS_GITHUB_ACTIONS_ROLE_ARN`
+- 필요 Variables: `FRONTEND_INSTANCE_ID`, `BACKEND_INSTANCE_ID`, `ECR_REGISTRY`, `SERVICE_URL` (+ 선택 TG ARN, `ENVIRONMENT`)
 
 ## ⚠️ 배포 시 주의사항
 
