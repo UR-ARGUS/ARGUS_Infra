@@ -168,7 +168,8 @@ CloudWatch / Synthetics는 **사용하지 않습니다**. Onde_Infra와 같이 *
   - `workflow_dispatch`: 수동 배포
 - OIDC: `github_oidc.tf` (SSM 등). **terraform apply는 통합 담당**
 - Secret: `AWS_GITHUB_ACTIONS_ROLE_ARN`
-- Variables: `FRONTEND_INSTANCE_ID`, `BACKEND_INSTANCE_ID`, `ECR_REGISTRY`, `SERVICE_URL` (`https://rookies-argus.click`), 선택 `ENVIRONMENT`
+- Secrets: `FRONTEND_INSTANCE_ID`, `BACKEND_INSTANCE_ID`, `ECR_REGISTRY`, `SERVICE_URL` (`https://rookies-argus.click`)
+- Variables: 선택 `ENVIRONMENT`
 
 앱 레포(CI)에서 인프라로 신호 예시:
 
